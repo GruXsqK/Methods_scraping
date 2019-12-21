@@ -110,7 +110,7 @@ while True:
         break
 
 
-page_hh = 35
+page_hh = 0
 
 while True:
 
@@ -147,7 +147,7 @@ while True:
 
         if html_parsed_hh.find('a', {'data-qa': 'pager-next'}).getText() == 'дальше':
             page_hh += 1
-            time.sleep(np.random.sample()*10)
+            time.sleep(np.random.sample()*3)
         else:
             break
 
