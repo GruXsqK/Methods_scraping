@@ -10,6 +10,28 @@
 import requests
 import pymongo
 from lxml import html
+from datetime import datetime, timedelta
+
+MONTH_VALUES = {'января': 1,
+                'февраля': 2,
+                'марта': 3,
+                'апреля': 4,
+                'мая': 5,
+                'июня': 6,
+                'июля': 7,
+                'августа': 8,
+                'сентября': 9,
+                'октября': 10,
+                'ноября': 11,
+                'декабря': 12,
+                }
+
+
+def int_value_from_ru_month(date_str):
+    for k, v in MONTH_VALUES.items():
+        date_str = date_str.replace(k, str(v))
+
+    return date_str
 
 
 def news_from_mail():
@@ -37,11 +59,10 @@ def news_from_mail():
 
             source = root_news.xpath("//a[@class='link color_gray breadcrumbs__link']/@href")[0]
             date = root_news.xpath("//span[@datetime]/@datetime")[0]
-
             news_mail = {'Источник': source,
                          'Новость': news,
                          '_id': link,
-                         'Дата': date}
+                         'Дата': datetime.fromisoformat(date)}
 
             all_news_mail.append(news_mail)
 
@@ -83,10 +104,11 @@ def news_from_lent():
                 source = main_link_lent
                 link = main_link_lent[:-1] + itm.xpath(".//a/@href")[0]
 
+            date = itm.xpath(".//a/time/@datetime")[0]
             news_lent = {'Источник': source,
                          'Новость': itm.xpath(".//a/text()")[0].replace('\xa0', ' '),
                          '_id': link,
-                         'Дата': itm.xpath(".//a/time/@datetime")[0]}
+                         'Дата': datetime.strptime(int_value_from_ru_month(date), ' %H:%M, %d %m %Y')}
 
             all_news_lent.append(news_lent)
 
@@ -117,10 +139,21 @@ def news_from_ydx():
 
             root_link = itm.xpath("../../div[@class='story__info']/div[@class='story__date']/text()")[0]
 
+            time_str = root_link.replace('\xa0', ' ').split(' ')
+            date = datetime.today().replace(second=0, microsecond=0)
+
+            if time_str[-2] == 'в':
+                if time_str[-3] == 'вчера':
+                    date -= timedelta(days=1)
+                else:
+                    date.replace(day=int(time_str[-4]), month=MONTH_VALUES[time_str[-3]])
+
+            date = date.replace(hour=int(time_str[-1].split(':')[0]), minute=int(time_str[-1].split(':')[1]))
+
             news_ydx = {'Источник': root_link[:-6].replace(' вчера\xa0в', ''),
                         'Новость': itm.xpath(".//a/text()")[0].replace('\xa0', ' '),
                         '_id': "https://yandex.ru" + itm.xpath(".//@href")[0],
-                        'Дата': root_link[-5:]}
+                        'Дата': date}
 
             all_news_ydx.append(news_ydx)
 
