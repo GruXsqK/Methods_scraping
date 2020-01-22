@@ -6,27 +6,44 @@
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 import os
 import scrapy
+import json
 from urllib.parse import urlparse
 from pymongo import MongoClient
 from scrapy.pipelines.images import ImagesPipeline
 
 
-class YoulaPhotosPipeline(ImagesPipeline):
-    # def get_media_requests(self, item, info):
-    #     if item['photos']:
-    #         for img in item['photos']:
-    #             try:
-    #                 yield scrapy.Request(img)
-    #             except Exception as e:
-    #                 print(e)
+class DataEditPipeline(object):
 
-    # def file_path(self, request, response, info):
-    #     return 'files/' + os.path.basename(urlparse(request.url).path)
+    @staticmethod
+    def process_item(item, spider):
+
+        data = json.loads('{' + item['data'].split(';')[0].split('{', maxsplit=1)[1])
+        item['price'] = int(data['entities']['products'][0]['discountedPrice'])/100
+        item['photos'] = [itm['url'] for itm in data['entities']['products'][0]['images']]
+        item['name'] = data['entities']['products'][0]['name']
+        item['params'] = {itm['slug']: itm['rawValue'] for itm in data['entities']['products'][0]['attributes']}
+        del(item['data'])
+
+        return item
+
+
+class YoulaPhotosPipeline(ImagesPipeline):
+
+    def get_media_requests(self, item, info):
+        if item['photos']:
+            for img in item['photos']:
+                try:
+                    yield scrapy.Request(img)
+                except Exception as e:
+                    print(e)
+
+    def file_path(self, request, response=None, info=None):
+        return info.spider.start_urls[0].split('/')[-1] + '/' + request.url.split('/')[-1][:5] + '/' + \
+               os.path.basename(urlparse(request.url).path)
 
     def item_completed(self, results, item, info):
-        print(item)
-        # if results:
-        #     item['photos'] = [itm[1] for itm in results if itm[0]]
+        if results:
+            item['photos'] = [itm[1] for itm in results if itm[0]]
         return item
 
 

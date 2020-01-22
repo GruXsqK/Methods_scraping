@@ -72,9 +72,9 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'youlaparser.pipelines.YoulaPhotosPipeline': 200,
-   'youlaparser.pipelines.DataBasePipeline': 300,
-
+    'youlaparser.pipelines.DataEditPipeline': 100,
+    'youlaparser.pipelines.YoulaPhotosPipeline': 200,
+    'youlaparser.pipelines.DataBasePipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 import scrapy
 from scrapy.http import HtmlResponse
-from youlaparser.items import YoulaparserItem
 from scrapy.loader import ItemLoader
+from youlaparser.items import YoulaparserItem
 
 
 class YoulaSpider(scrapy.Spider):
     name = 'youla'
     allowed_domains = ['youla.ru']
-    start_urls = ['https://youla.ru']
+    start_urls = [f'https://youla.ru']
 
     def __init__(self, category):
         super(YoulaSpider, self).__init__()
@@ -19,11 +19,9 @@ class YoulaSpider(scrapy.Spider):
         for link in ads_links:
             yield response.follow(link, callback=self.parse_ads)
 
-    def parse_ads(self, response: HtmlResponse):
+    @staticmethod
+    def parse_ads(response: HtmlResponse):
         loader = ItemLoader(item=YoulaparserItem(), response=response)
         loader.add_value('_id', response.url)
-        loader.add_css('name', "h1::text")
-        loader.add_xpath('price', '//span[@class=\'sc-eNPDpu draEbH\']/text()')
-        loader.add_xpath('photos', '//div[@class=\'sc-hUfwpO sc-imABML fEIkBF\']')
-        loader.add_xpath('attr', '//li[@data-test-block="Attributes"]')
+        loader.add_css('data', 'script::text')
         yield loader.load_item()
